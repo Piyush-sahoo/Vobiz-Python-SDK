@@ -36,7 +36,7 @@ Make outbound calls, manage SIP trunks, phone numbers, endpoints, and build dyna
 ## Installation
 
 ```bash
-pip install vobiz
+pip install vobiz-python
 ```
 
 Or install from source:
@@ -102,7 +102,7 @@ Create a simple Flask server that returns VobizXML:
 ```python
 # answer_server.py
 from flask import Flask, request, Response
-from vobiz import vobizxml
+import vobiz
 
 app = Flask(__name__)
 
@@ -116,7 +116,7 @@ def answer():
     print(f"Incoming call {call_uuid}: {from_num} → {to_num}")
 
     # Build XML response using the SDK
-    response = vobizxml.ResponseElement()
+    response = vobiz.vobizxml.ResponseElement()
     response.add_speak(
         "Hello! You have reached our service. Thank you for calling.",
         voice="WOMAN",
@@ -476,9 +476,9 @@ client.subaccounts.delete(sub_id)
 VobizXML is returned from your answer URL to tell Vobiz what to do with a call.
 
 ```python
-from vobiz import vobizxml
+import vobiz
 
-response = vobizxml.ResponseElement()
+response = vobiz.vobizxml.ResponseElement()
 
 # Speak text (TTS)
 response.add_speak("Welcome to Acme Corp.", voice="WOMAN", language="en-US")
