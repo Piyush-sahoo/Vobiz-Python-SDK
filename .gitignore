@@ -1,0 +1,40 @@
+# Python
+*.pyc
+*.pyo
+*.pyd
+__pycache__/
+*.py[cod]
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+*.egg
+MANIFEST
+
+# Virtual environments
+.venv*/
+venv/
+env/
+.env/
+
+# Testing / coverage
+.coverage
+cover/
+htmlcov/
+.tox/
+.pytest_cache/
+tests/htmlcov/
+python-sdk-test/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Secrets — NEVER commit these
+.env
+
+# macOS
+.DS_Store

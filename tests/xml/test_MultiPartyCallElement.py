@@ -1,0 +1,93 @@
+from unittest import TestCase
+from vobiz import vobizxml
+from vobiz.exceptions import ValidationError
+from tests import VobizXmlTestCase
+
+
+class MultiPartyCallElementTest(TestCase, VobizXmlTestCase):
+
+    def test_default_xml(self):
+
+        expected_response = '<MultiPartyCall agentHoldMusicMethod="GET" coachMode="true" ' \
+                            'customerHoldMusicMethod="GET" endMpcOnExit="false" enterSound="beep:1" ' \
+                            'enterSoundMethod="GET" exitSound="beep:2" exitSoundMethod="GET" hold="false" ' \
+                            'maxDuration="14400" maxParticipants="10" mute="false" onExitActionMethod="POST" ' \
+                            'record="false" recordParticipantTrack="false" recordFileFormat="mp3" ' \
+                            'recordMinMemberCount="1" recordingCallbackMethod="POST" ' \
+                            'relayDTMFInputs="false" role="agent" startMpcOnEnter="true" ' \
+                            'startRecordingAudioMethod="GET" ' \
+                            'statusCallbackEvents="mpc-state-changes,participant-state-changes" ' \
+                            'statusCallbackMethod="POST" stayAlone="false" ' \
+                            'stopRecordingAudioMethod="GET" ' \
+                            'waitMusicMethod="GET" transcript="false">Nairobi</MultiPartyCall>'
+
+        element = vobizxml.MultiPartyCallElement(content='Nairobi', role='Agent')
+        self.assertXmlEqual(element.to_string(False), expected_response)
+
+    def test_setting_optional_fields(self):
+        expected_response = '<MultiPartyCall agentHoldMusicMethod="GET" coachMode="true" ' \
+                            'customerHoldMusicMethod="GET" endMpcOnExit="false" enterSound="beep:1" ' \
+                            'enterSoundMethod="GET" exitSound="beep:1" exitSoundMethod="GET" hold="false" ' \
+                            'maxDuration="14400" maxParticipants="10" mute="false" onExitActionMethod="POST" ' \
+                            'record="false" recordParticipantTrack="false" recordFileFormat="mp3" ' \
+                            'recordMinMemberCount="1" recordingCallbackMethod="POST" ' \
+                            'relayDTMFInputs="false" role="supervisor" startMpcOnEnter="true" ' \
+                            'startRecordingAudioMethod="GET" ' \
+                            'statusCallbackEvents="mpc-state-changes,participant-state-changes" ' \
+                            'statusCallbackMethod="POST" stayAlone="false" ' \
+                            'stopRecordingAudioMethod="GET" ' \
+                            'waitMusicMethod="GET" transcript="false">Tokyo</MultiPartyCall>'
+
+        element = vobizxml.MultiPartyCallElement(content='Tokyo', role='supervisor', exit_sound='beep:1')
+        self.assertXmlEqual(element.to_string(False), expected_response)
+
+    def test_validation_on_init(self):
+        expected_error = '["status_callback_events should be among (\'mpc-state-changes\', ' \
+                         '\'participant-state-changes\', \'participant-speak-events\', ' \
+                         '\'participant-digit-input-events\', \'add-participant-api-events\'). ' \
+                         'multiple values should be COMMA(,) separated (actual value: hostages-move)"]'
+
+        actual_error = ''
+        try:
+            vobizxml.MultiPartyCallElement(content='Rio', role='agent', status_callback_events='hostages-move')
+        except ValidationError as e:
+            actual_error = str(e)
+        self.assertXmlEqual(expected_error, actual_error)
+
+    def test_validation_on_set(self):
+        expected_error = "['300 <= max_duration <= 28800 (actual value: 255)']"
+
+        element = vobizxml.MultiPartyCallElement(content='Denver', role='Customer')
+        actual_error = ''
+        try:
+            element.set_max_duration(255)
+        except ValidationError as e:
+            actual_error = str(e)
+        self.assertXmlEqual(expected_error, actual_error)
+
+    def test_builder_setting(self):
+
+        expected_xml = '<MultiPartyCall agentHoldMusicMethod="GET" coachMode="false" customerHoldMusicMethod="GET" ' \
+                       'customerHoldMusicUrl="https://vobiz.ai/voice.mp3" endMpcOnExit="true" enterSound="beep:1" ' \
+                       'enterSoundMethod="GET" exitSound="beep:2" exitSoundMethod="GET" hold="false" ' \
+                       'maxDuration="4500" maxParticipants="9" mute="false" onExitActionMethod="GET" ' \
+                       'onExitActionUrl="https://vobiz.ai/api.mp3" record="false" recordParticipantTrack="false" ' \
+                       'recordFileFormat="mp3" recordingCallbackMethod="POST" relayDTMFInputs="false" ' \
+                       'role="customer" startMpcOnEnter="true" startRecordingAudio="https://vobiz.ai/api.mp3" ' \
+                       'startRecordingAudioMethod="GET" ' \
+                       'statusCallbackEvents="mpc-state-changes,participant-state-changes" ' \
+                       'statusCallbackMethod="POST" stayAlone="false" stopRecordingAudio="https://vobiz.ai/api.mp3" ' \
+                       'stopRecordingAudioMethod="GET" ' \
+                       'waitTime="5" ' \
+                       'waitMusicMethod="GET" recordMinMemberCount="1" transcript="true" transcriptionUrl="https://vobiz.ai/api.mp3" >Helsinki</MultiPartyCall> '
+        element = vobizxml.MultiPartyCallElement(content='Helsinki', role='customer'). \
+            set_max_duration(4500).set_max_participants(9).set_end_mpc_on_exit(True). \
+            set_customer_hold_music_url('https://vobiz.ai/voice.mp3').set_coach_mode(False). \
+            set_on_exit_action_url('https://vobiz.ai/api.mp3').set_on_exit_action_method('GET'). \
+            set_stop_recording_audio("https://vobiz.ai/api.mp3"). \
+            set_start_recording_audio("https://vobiz.ai/api.mp3"). \
+            set_wait_time(5). \
+            set_transcript(True). \
+            set_transcription_url("https://vobiz.ai/api.mp3")
+
+        self.assertXmlEqual(expected_xml, element.to_string(False))

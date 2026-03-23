@@ -1,0 +1,83 @@
+name: Python CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    env:
+      PYTHONPATH: .
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r test-requirements.txt
+          pip install -e .
+
+      - name: Run unit tests
+        run: |
+          pytest tests/ --ignore=tests/integration --cov=vobiz --cov-report=term-missing
+
+  integration-tests:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
+
+    env:
+      PYTHONPATH: .
+      VOBIZ_AUTH_ID: ${{ secrets.VOBIZ_AUTH_ID }}
+      VOBIZ_AUTH_TOKEN: ${{ secrets.VOBIZ_AUTH_TOKEN }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r test-requirements.txt
+          pip install -e .
+
+      - name: Run integration tests
+        run: |
+          if [ -z "$VOBIZ_AUTH_ID" ] || [ -z "$VOBIZ_AUTH_TOKEN" ]; then
+            echo "Skipping integration tests: VOBIZ_AUTH_ID / VOBIZ_AUTH_TOKEN secrets are not set."
+            exit 0
+          fi
+
+          set +e
+          pytest tests/integration -v --cov=vobiz --cov-report=term-missing
+          status=$?
+          set -e
+
+          if [ $status -eq 5 ]; then
+            echo "No integration tests were collected (pytest exit code 5); treating as non-fatal."
+            exit 0
+          fi
+
+          exit $status
